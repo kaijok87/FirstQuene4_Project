@@ -2,6 +2,8 @@ using System;
 using System.Collections;
 using Unity.VisualScripting;
 using UnityEngine;
+using static UnityEngine.UI.CanvasScaler;
+
 public class FlockingMemberNodeData : PoolObjectBase , IControllObject
 {
     [SerializeField]
@@ -10,6 +12,21 @@ public class FlockingMemberNodeData : PoolObjectBase , IControllObject
     /// </summary>
     bool isLeader = false;
 
+    /// <summary>
+    /// 리더 인지 설정하는 프로퍼티
+    /// </summary>
+    public bool IsLeader
+    {
+        get => isLeader;
+        set 
+        {
+            if (value) 
+            {
+                parentNode.onAssemble -= OnAssemble; //리더인경우 호출 로직이 실행안되야함으로 액션에서 제외
+                isLeader = value;
+            }
+        }
+    }
     /// <summary>
     /// 군체를 관리할 메니저
     /// </summary>
@@ -31,7 +48,7 @@ public class FlockingMemberNodeData : PoolObjectBase , IControllObject
     /// 기준점에서 해당 맴버의 위치를 잡기위한 연산값
     /// </summary>
     Vector3 flockingDirectionPos;
-
+   
     /// <summary>
     /// 군체의 인덱스 번호
     /// </summary>
@@ -48,14 +65,7 @@ public class FlockingMemberNodeData : PoolObjectBase , IControllObject
     IUnitDataBase unitData;
     public IUnitDataBase UnitData => unitData;
 
-    /// <summary>
-    /// 리더 인지 설정하는 프로퍼티
-    /// </summary>
-    public bool IsLeader 
-    {
-        get => isLeader; 
-        set => isLeader = value; 
-    }
+  
 
 
     /// <summary>
@@ -67,14 +77,16 @@ public class FlockingMemberNodeData : PoolObjectBase , IControllObject
     /// <summary>
     /// 해당 군체 맴버데이터및 델리게이터를 초기화할 함수
     /// </summary>
-    /// <param name="parnetNode">군체의 중심부</param>
+    /// <param name="parentNode">군체의 중심부</param>
     /// <param name="unitObject">맴버에담긴 유닛오브젝트</param>
+    /// <param name="flockingPos">군체에서 자신의 상대 위치값</param>
     /// <param name="index">군체에서의 인덱스값</param>
-    public void InitDataSetting(FlockingManager parnetNode, PoolObj_Unit unitObject, int index) 
+    public void InitDataSetting(FlockingManager parentNode, PoolObj_Unit unitObject, Vector3 flockingPos, int index) 
     {
-        this.parentNode = parnetNode;
+        this.parentNode = parentNode;
         this.flockingIndex = index;
         this.unitObject = unitObject;
+        this.flockingDirectionPos = flockingPos;
 
         charcterMoveProcess = GetComponentInChildren<IMoveBase>();
         charcterMoveProcess.InitDataSetting();
@@ -82,6 +94,11 @@ public class FlockingMemberNodeData : PoolObjectBase , IControllObject
         unitData = GetComponentInChildren<IUnitDataBase>();
         unitData.InitDataSetting();
         unitData.onDie = OnDie;
+
+        parentNode.onAssemble += OnAssemble;
+        parentNode.onMove += CharcterMove;
+        parentNode.onStop += OnFlockingMovingStop;
+        
     }
 
     /// <summary>
@@ -95,16 +112,17 @@ public class FlockingMemberNodeData : PoolObjectBase , IControllObject
         charcterMoveProcess.OnMove(direction, distance);
     }
 
-   
+    
 
     /// <summary>
     /// 군체의 집합신호를 받아서 집합위치로 이동시키는 로직
+    /// <param name="originPos">이동시킬 기준점</param>
     /// </summary>
-    private void OnAssemble() 
+    public void OnAssemble(Vector3 originPos) 
     {
         charcterMoveProcess.SetMoveDistanceSubtractiveOperation(0.0f);
-        Vector3 dir = flockingDirectionPos - transform.position;
-        charcterMoveProcess.OnMove(dir.normalized, dir.sqrMagnitude);
+        Vector3 dir = originPos + flockingDirectionPos - transform.position;
+        charcterMoveProcess.OnMove(dir.normalized, dir.magnitude);
     }
 
     /// <summary>
@@ -133,10 +151,15 @@ public class FlockingMemberNodeData : PoolObjectBase , IControllObject
         unitObject = null;          // 값 초기화 
 
         charcterMoveProcess = null; //
-        unitData.onDie = null;
-        unitData = null;
-
         isLeader = false;
+        
+        unitData.onDie = null;
+        parentNode.onAssemble -= OnAssemble;
+        parentNode.onMove -= CharcterMove;
+        parentNode.onStop -= OnFlockingMovingStop;
+
+
+        unitData = null;
         parentNode = null;
         flockingDirectionPos = Vector3.zero;
         flockingIndex = -1;
@@ -152,5 +175,13 @@ public class FlockingMemberNodeData : PoolObjectBase , IControllObject
             DataReset();
         }
         base.ResetData();            //맴버도 풀로돌린다.
+    }
+
+    /// <summary>
+    /// 군체 정렬기준점을 자신의위치로 갱신하는 함수
+    /// </summary>
+    public Vector3 SetFlockingDirectionPos()
+    {
+        return flockingDirectionPos = transform.position;
     }
 }

@@ -701,4 +701,9 @@ public class UnitDataBaseNode : MonoBehaviour , IUnitDataTable, IUnitDataBase
     public void InitDataSetting()
     {
     }
+
+    public void ResetData()
+    {
+        
+    }
 }

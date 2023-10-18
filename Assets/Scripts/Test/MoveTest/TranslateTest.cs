@@ -17,6 +17,8 @@ public class TranslateTest : TestBase
     [SerializeField]
     FlockingManager flockingManager;
 
+    [SerializeField]
+    float cameraZPos = 0.0f;
     protected override void Awake()
     {
         base.Awake();
@@ -26,19 +28,30 @@ public class TranslateTest : TestBase
 
     protected override void Test1(InputAction.CallbackContext context)
     {
-        CharcterMove(target_1.position, target_1_Collider.radius);
+        flockingManager.InitData();
+  
     }
     protected override void Test2(InputAction.CallbackContext context)
     {
-        CharcterMove(target_2.position, target_2_Collider.radius);
+        flockingManager.ResetData();
     }
     protected override void Test3(InputAction.CallbackContext context)
     {
-        CharcterMove(Vector3.zero);
+        flockingManager.OnAssemble();
     }
     protected override void Test4(InputAction.CallbackContext context)
     {
-        flockingManager.InitData();
+    }
+    protected override void Test5(InputAction.CallbackContext context)
+    {
+        flockingManager.SettingFlockingPos();
+    }
+    protected override void TestRightClick(InputAction.CallbackContext context)
+    {
+        Vector3 screenPos = Mouse.current.position.value;
+        screenPos.z = cameraZPos;
+        Vector3 worldPos = Camera.main.ScreenToWorldPoint(screenPos); 
+        flockingManager.OnFlockingMove(worldPos);
     }
     /// <summary>
     /// 캐릭터 이동을위한 작업을 진행한다.
@@ -49,6 +62,6 @@ public class TranslateTest : TestBase
     {
         Vector3 dir = endPos - transform.position;
         testCharter.SetMoveDistanceSubtractiveOperation(radius);
-        testCharter.OnMove(dir.normalized, dir.sqrMagnitude);
+        testCharter.OnMove(dir.normalized, dir.magnitude);
     }
 }

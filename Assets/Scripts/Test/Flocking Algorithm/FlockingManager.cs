@@ -42,6 +42,8 @@ public class FlockingManager : MonoBehaviour
     HiddenLeaderAbility mainUnitHiddenAbility;
     public HiddenLeaderAbility MainUnitHiddenAbility => mainUnitHiddenAbility;
 
+
+
     /// <summary>
     /// 리더 유닛 기본적으로 0번의 유닛이다.
     /// </summary>
@@ -70,19 +72,21 @@ public class FlockingManager : MonoBehaviour
     /// 1. 배틀맵에서 memberArray 값이 수정될경우 해당리스트 내용도 수정이되야한다.
     /// 2. 편성 화면에서 편성한내용을 해당리스트에도 적용하도록한다. (해당내용은 수정이완료됬을때 한번만한다)
     ///  2-1.이시점에서 군체의 포지션 종류내용을 읽어서 icontrollObject 들의 간격값을 연결해서 넣어둔다.
-    ///  
     /// </summary>
     List<IControllObject> livingMemberList;
 
-
-
+    /// <summary>
+    /// 군체의 분포위치를 저장할 백터값
+    /// </summary>
+    Vector3[] flockingPosArray;
+   
 
 
 
     /// <summary>
     /// 정해진 군체 모양으로 집합하라고 신호를 보내는 델리게이트
     /// </summary>
-    public Action onAssemble;
+    public Action<Vector3> onAssemble;
 
     /// <summary>
     /// 군체 배열의 이동신호를 보낸다.
@@ -95,6 +99,18 @@ public class FlockingManager : MonoBehaviour
     /// </summary>
     public Action onStop;
 
+    private void Awake()
+    {
+        flockingPosArray = new Vector3[memberCapacity];
+        
+        ///테스트 군체 범위셋팅
+        flockingPosArray[0] = new Vector3(0, 0, 0);
+        for (int i = 1; i< flockingPosArray.Length; i++)
+        {
+            flockingPosArray[i] = new Vector3(UnityEngine.Random.Range(0.5f, 10.0f), 0, UnityEngine.Random.Range(0.5f, 10.0f));
+        }
+    }
+
     /// <summary>
     /// 군체 맴버 셋팅하는 함수 
     /// 매번 새롭게 넣기때문에 자주실행하면 안좋다.
@@ -103,19 +119,58 @@ public class FlockingManager : MonoBehaviour
     {
 
         memberArray = new IControllObject[memberCapacity];
+
+
+        memberArray[0] = (IControllObject)BattleMapFactory.Instance.GetObject(BattleMapPoolNames.FlockingMember, transform);
+        PoolObj_Unit unitObject = (PoolObj_Unit)BattleMapFactory.Instance.GetObject(BattleMapPoolNames.FlockingUnit, memberArray[0].transform);
+        memberArray[0].InitDataSetting(this, unitObject, flockingPosArray[0], 0);
+        memberArray[0].onDie += UnitDieAndNextLeaderSetting;
+        memberArray[0].IsLeader = true; //리더셋팅
+        leaderUnit = memberArray[0]; //군체를 컨트롤할 기준점이될 유닛 셋팅
+
+
         int forSize = memberArray.Length;
-        PoolObj_Unit unitObject;
-        for (int i = 0; i < forSize; i++)
+        for (int i = 1; i < forSize; i++)
         {
             memberArray[i] = (IControllObject)BattleMapFactory.Instance.GetObject(BattleMapPoolNames.FlockingMember,transform);
-            unitObject = (PoolObj_Unit)BattleMapFactory.Instance.GetObject(BattleMapPoolNames.FlockingMember, memberArray[i].transform);
-            memberArray[i].InitDataSetting(this, unitObject , i);
-            AddAction(memberArray[i]);
+            unitObject = (PoolObj_Unit)BattleMapFactory.Instance.GetObject(BattleMapPoolNames.FlockingUnit, memberArray[i].transform);
+            memberArray[i].InitDataSetting(this, unitObject , flockingPosArray[i], i);
+            memberArray[i].onDie += UnitDieAndNextLeaderSetting;
         }
         livingMemberList = new List<IControllObject>(memberArray);
-        leaderUnit = memberArray[0]; //군체를 컨트롤할 기준점이될 유닛 셋팅
-        memberArray[0].IsLeader = true; //리더셋팅
+        //Debug.Log($"{onAssemble} , {onMove} , {onStop}");
     }
+
+    /// <summary>
+    /// 현재 위치를 맴버 군체위치로 다시셋팅하는 함수
+    /// </summary>
+    public void SettingFlockingPos() 
+    {
+        foreach (IControllObject liveMember in livingMemberList)
+        {
+            flockingPosArray[liveMember.ArrayIndex] = liveMember.SetFlockingDirectionPos();
+        }
+
+    }
+
+    /// <summary>
+    /// 특정지점으로 군체 전체를 이동하는 로직
+    /// </summary>
+    /// <param name="movePos">이동할 위치</param>
+    public void OnFlockingMove(Vector3 movePos) 
+    {
+        leaderUnit.OnAssemble(movePos);
+        onAssemble?.Invoke(movePos);
+    }
+
+    /// <summary>
+    /// 리더기준으로 모이라고 호출하기
+    /// </summary>
+    public void OnAssemble() 
+    {
+        onAssemble?.Invoke(leaderUnit.transform.position);
+    }
+
     /// <summary>
     /// 셋팅된 데이터 초기화 
     /// </summary>
@@ -123,16 +178,14 @@ public class FlockingManager : MonoBehaviour
     {
         foreach (IControllObject member in livingMemberList)
         {
-            member.onDie = null;
             member.ResetData();
         }
-        onAssemble = null;
-        onMove = null;
-        onStop = null;
         leaderUnit = null;
         memberArray = null;
         livingMemberList.Clear();
+        //Debug.Log($"{onAssemble} , {onMove} , {onStop}");
     }
+
     /// <summary>
     /// 유닛이 죽을때 처리 하기위한 함수 
     /// 배열및 리스트에서 제거 및 리더 가죽었으면 리더변경
@@ -144,8 +197,6 @@ public class FlockingManager : MonoBehaviour
         livingMemberList.Remove(unit);
         memberArray[unit.ArrayIndex] = null;
 
-        DeleteAction(unit);
-        
         if (unit.IsLeader)  //죽은 유닛이 리더면 
         {
             if (livingMemberList.Count > 0) //살아있는 유닛이 있을때  
@@ -160,28 +211,5 @@ public class FlockingManager : MonoBehaviour
     }
 
 
-    /// <summary>
-    /// 액션 연결하는 함수
-    /// </summary>
-    /// <param name="unit">연결할 유닛</param>
-    private void AddAction(IControllObject unit)
-    {
-        unit.onDie  += UnitDieAndNextLeaderSetting;
-        onAssemble  += unit.OnAssemble;
-        onMove      += unit.CharcterMove;
-        onStop      += unit.OnFlockingMovingStop;
-    }
-
-    /// <summary>
-    /// 액션 연결끊는 함수
-    /// </summary>
-    /// <param name="unit">연결끊을 유닛</param>
-    private void DeleteAction(IControllObject unit)
-    {
-        unit.onDie  -= UnitDieAndNextLeaderSetting;
-        onAssemble  -= unit.OnAssemble;
-        onMove      -= unit.CharcterMove;
-        onStop      -= unit.OnFlockingMovingStop;
-    }
 }
 

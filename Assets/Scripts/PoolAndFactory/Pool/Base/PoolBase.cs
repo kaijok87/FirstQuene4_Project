@@ -56,7 +56,7 @@ public class PoolBase<T> : MonoBehaviour where T : PoolObjectBase
         if (poolQueue.Count > 0)
         {
             resultObjcect = poolQueue.Dequeue();
-
+            resultObjcect.gameObject.SetActive(true);
         }
         else
         {
@@ -80,8 +80,12 @@ public class PoolBase<T> : MonoBehaviour where T : PoolObjectBase
             poolObject.onReset += () => {
                 poolQueue.Enqueue(poolObject);
                 poolObject.transform.SetParent(transform);
+                poolObject.gameObject.SetActive(false);
             };
+
             poolQueue.Enqueue(poolObject);
+
+            poolObject.gameObject.SetActive(false);
         }
 
     }

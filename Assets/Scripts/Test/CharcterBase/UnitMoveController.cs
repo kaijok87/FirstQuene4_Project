@@ -46,8 +46,6 @@ public class UnitMoveController : MonoBehaviour, IMoveBase
 
     protected virtual void Awake()
     {
-        CapsuleCollider collider = GetComponentInChildren<CapsuleCollider>();
-        colliderSize = collider.radius;
         moveCoroutine = CharcterMoveCoroutine(transform.position, 0.0f); //StopCoroutine Null레퍼런스 Expection 방지용
     }
 
@@ -57,6 +55,9 @@ public class UnitMoveController : MonoBehaviour, IMoveBase
     public void InitDataSetting() 
     {
         moveTarget = transform.parent;
+        charcterRigidbody = moveTarget.GetComponent<Rigidbody>();
+        CapsuleCollider collider = moveTarget.GetComponent<CapsuleCollider>();
+        colliderSize = collider.radius;
     }
 
 
@@ -95,6 +96,8 @@ public class UnitMoveController : MonoBehaviour, IMoveBase
     /// <param name="distance">이동할 거리</param>
     public void OnMove(Vector3 direction, float distance) 
     {
+        OnRigidMove(direction,distance);
+        return;
         StopCoroutine(moveCoroutine);
         moveCoroutine = CharcterMoveCoroutine(direction,distance);
         StartCoroutine(moveCoroutine);
@@ -123,7 +126,6 @@ public class UnitMoveController : MonoBehaviour, IMoveBase
 #endif
 
         float checkValue = checkingInterval + moveDistanceSubtractiveOperation;                     // 이동할 거리 값
-
         while ((endPos - moveTarget.position).sqrMagnitude > checkValue)
         {
             moveTarget.Translate(Time.deltaTime * charcterMoveSpeed * direction, Space.World);       // 특정방향으로 이동속도만큼 이동시킨다.
@@ -145,10 +147,7 @@ public class UnitMoveController : MonoBehaviour, IMoveBase
     /// </summary>
     Rigidbody charcterRigidbody;
 
-    private void Start()
-    {
-        charcterRigidbody = GetComponentInChildren<Rigidbody>();
-    }
+    WaitForFixedUpdate fixedWait = new WaitForFixedUpdate();
 
     /*
         Root Object 를 이동시키고 
@@ -163,34 +162,47 @@ public class UnitMoveController : MonoBehaviour, IMoveBase
     /// </summary>
     /// <param name="direction">이동할 방향</param>
     /// <param name="distance">이동할 거리</param>
-    //public virtual void OnRigidMove(Vector3 direction, float distance)
-    //{
-    //    StopCoroutine(moveCoroutine);
-    //    moveCoroutine = RigidBodyCharcterMove(direction, distance);
-    //    StartCoroutine(moveCoroutine);
-    //}
+    public virtual void OnRigidMove(Vector3 direction, float distance)
+    {
+        StopCoroutine(moveCoroutine);
+        moveCoroutine = RigidBodyCharcterMove(direction, distance);
+        StartCoroutine(moveCoroutine);
+    }
 
 
     /// <summary>
     /// 캐릭터 이동속도 에 비례하여 
     /// 이동할 방향과 거리만큼 이동시키는 코루틴
     /// 리지드 바디 를 이용한다.
+    /// 벽뚧 버그 어떻게 안되나?? 뒤에서 밀면 뚧어버리네..
     /// </summary>
     /// <param name="direction">이동할 방향</param>
     /// <param name="distance">이동할 거리</param>
-    //    protected virtual IEnumerator RigidBodyCharcterMove(Vector3 direction , float distance) 
-    //    {
-    //        Vector3 endPos = transform.position + (direction * distance);
-    //#if UNITY_EDITOR
-    //        gizmosEndPos = endPos;
-    //#endif
-    //        while ((endPos- transform.position).sqrMagnitude > checkingInterval) 
-    //        {
-    //            charcterRigidbody.MovePosition(charcterRigidbody.position + Time.deltaTime * charcterMoveSpeed * direction);
-    //            yield return null;
-    //        }
-    //        transform.position = endPos;
-    //    }
+    protected virtual IEnumerator RigidBodyCharcterMove(Vector3 direction, float distance)
+    {
+        Vector3 endPos = moveTarget.position + (direction * distance);
+#if UNITY_EDITOR
+        gizmosEndPos = endPos;
+#endif
+        float checkValue = checkingInterval + moveDistanceSubtractiveOperation;
+        //Debug.Log($"start :{(endPos-moveTarget.position).sqrMagnitude} > {checkValue}");
+        float sqlMagnitudeValue = (endPos - moveTarget.position).sqrMagnitude;  // 도착했는지에대한 현재 진행상황 저장할변수
+        float tempValue = 0.0f;     //방향을 다시잡아야할때 사용할 변수
+        while (sqlMagnitudeValue  > checkValue)
+        {
+            charcterRigidbody.MovePosition(moveTarget.position + Time.deltaTime * charcterMoveSpeed * direction);
+            yield return fixedWait;
+            tempValue = (endPos - moveTarget.position).sqrMagnitude;    //진행상황임시로저장하고 
+            if (sqlMagnitudeValue  < tempValue) //이동간격은 좁아져야하는데  거리가 넓어졌다는것은 도착점을 지나쳤다는것이니 
+            {
+                
+                direction = (endPos - moveTarget.position).normalized; //방향을 다시잡는다
+            }
+            sqlMagnitudeValue = tempValue;  //체크할 변수에 셋팅한다.
+        }
+        //Debug.Log($"end :{(endPos - moveTarget.position).sqrMagnitude} > {checkValue}");
+        charcterRigidbody.MovePosition(endPos);
+    }
 
 
 #if UNITY_EDITOR

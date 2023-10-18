@@ -32,26 +32,23 @@ public interface IControllObject
     Action<IControllObject> onDie { get; set; }
 
     /// <summary>
-    /// 집합호출시 실행할 함수
+    /// 맴버의 초기위치를 자신의 위치로 수정하는 함수
     /// </summary>
-    void OnAssemble(){ }
+    Vector3 SetFlockingDirectionPos();
 
     /// <summary>
-    /// 집단 이동호출시 실행할 함수
+    /// 캐릭터 개별이동함수
     /// </summary>
-    void CharcterMove(Vector3 direction, float distance, float radius = 0.0f) { }
-
-    /// <summary>
-    /// 집단 이동도중 멈추라고 호출시 실행할 함수
-    /// </summary>
-    void OnFlockingMovingStop() { }
+    /// <param name="endPos">도착 위치값</param>
+    public void OnAssemble(Vector3 endPos);
 
     /// <summary>
     /// 데이터 초기화할 함수
     /// </summary>
     /// <param name="parnetNode">부모 군체</param>
+    /// <param name="flockingPos">군체에서의 자신의 위치값</param>
     /// <param name="index">자신의 인덱스값</param>
-    void InitDataSetting(FlockingManager parnetNode, PoolObj_Unit unitObject, int index);
+    void InitDataSetting(FlockingManager parnetNode, PoolObj_Unit unitObject, Vector3 flockingPos , int index);
 
     /// <summary>
     /// 셋팅된 데이터 초기화 

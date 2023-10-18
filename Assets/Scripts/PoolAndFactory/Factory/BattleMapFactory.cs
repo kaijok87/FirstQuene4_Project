@@ -13,8 +13,9 @@ public class BattleMapFactory : DontDistroySingleton<BattleMapFactory>
 {
     Pool_FlockingMember flockingMember;
     Pool_Unit flockingUnit;
-    private void Awake()
+    protected override void Awake()
     {
+        base.Awake();
         flockingMember = GetComponentInChildren<Pool_FlockingMember>();
         flockingUnit = GetComponentInChildren<Pool_Unit>();
     }

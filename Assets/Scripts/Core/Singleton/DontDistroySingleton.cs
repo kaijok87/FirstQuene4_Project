@@ -16,13 +16,13 @@ public class DontDistroySingleton<T> : MonoBehaviour where T : Component
                 Debug.LogWarning($"{typeof(T).Name}은 이미 삭제 중이다.");
                 return null;    //종료중이면 널
             }
-            else if (Instance != null)  //값이있으면 
+            else if (instance != null)  //값이있으면 
             {
-                return Instance;    //그대로 반환
+                return instance;    //그대로 반환
             }
             else    // 값이없으면 
             {
-                if (FindObjectOfType<T>(true) == null) //기존씬에 있는지 체크하고  
+                if (FindObjectOfType<T>(true)  == null) //기존씬에 있는지 체크하고  
                 {
                     //없으면 생성
                     GameObject gameObject = new GameObject($"DontDestroySingleton_{typeof(T).Name}");
@@ -35,7 +35,7 @@ public class DontDistroySingleton<T> : MonoBehaviour where T : Component
     }
 
 
-    private void Awake()
+    protected virtual void Awake()
     {
         if (instance == null) //오브젝트 생성시 해당값이 없는경우 처음 생성되는 것이니
         {
