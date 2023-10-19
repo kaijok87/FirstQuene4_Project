@@ -35,6 +35,7 @@ public class DontDistroySingleton<T> : MonoBehaviour where T : Component
     }
 
 
+
     protected virtual void Awake()
     {
         if (instance == null) //오브젝트 생성시 해당값이 없는경우 처음 생성되는 것이니

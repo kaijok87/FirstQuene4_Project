@@ -4,7 +4,10 @@ using Unity.VisualScripting;
 using UnityEngine;
 using static UnityEngine.UI.CanvasScaler;
 
-public class FlockingMemberNodeData : PoolObjectBase , IControllObject
+/// <summary>
+/// 군체 맴버 데이터
+/// </summary>
+public class BattleMapTeamMember : PoolObjectBase , IControllObject
 {
     [SerializeField]
     /// <summary>
@@ -30,7 +33,7 @@ public class FlockingMemberNodeData : PoolObjectBase , IControllObject
     /// <summary>
     /// 군체를 관리할 메니저
     /// </summary>
-    FlockingManager parentNode;
+    BattleMapTeamManager parentNode;
     
     /// <summary>
     /// 유닛을 풀로 돌리기위한 오브젝트 
@@ -65,9 +68,6 @@ public class FlockingMemberNodeData : PoolObjectBase , IControllObject
     IUnitDataBase unitData;
     public IUnitDataBase UnitData => unitData;
 
-  
-
-
     /// <summary>
     /// 유닛이 죽었을때 신호보낼 델리게이트
     /// </summary>
@@ -81,7 +81,7 @@ public class FlockingMemberNodeData : PoolObjectBase , IControllObject
     /// <param name="unitObject">맴버에담긴 유닛오브젝트</param>
     /// <param name="flockingPos">군체에서 자신의 상대 위치값</param>
     /// <param name="index">군체에서의 인덱스값</param>
-    public void InitDataSetting(FlockingManager parentNode, PoolObj_Unit unitObject, Vector3 flockingPos, int index) 
+    public void InitDataSetting(BattleMapTeamManager parentNode, PoolObj_Unit unitObject, Vector3 flockingPos, int index) 
     {
         this.parentNode = parentNode;
         this.flockingIndex = index;
@@ -134,54 +134,55 @@ public class FlockingMemberNodeData : PoolObjectBase , IControllObject
     }
 
     /// <summary>
-    /// 유닛이 죽었을때 실행할 함수
-    /// </summary>
-    private void OnDie() 
-    {
-        onDie?.Invoke(this);    //죽었다고 신호보내고 
-        DataReset();
-    }
-
-    /// <summary>
-    /// 초기화할 공통 데이터
-    /// </summary>
-    private void DataReset() 
-    {
-        unitObject.ResetData();     // 유닛 풀로 돌리고 
-        unitObject = null;          // 값 초기화 
-
-        charcterMoveProcess = null; //
-        isLeader = false;
-        
-        unitData.onDie = null;
-        parentNode.onAssemble -= OnAssemble;
-        parentNode.onMove -= CharcterMove;
-        parentNode.onStop -= OnFlockingMovingStop;
-
-
-        unitData = null;
-        parentNode = null;
-        flockingDirectionPos = Vector3.zero;
-        flockingIndex = -1;
-    }
-
-    /// <summary>
-    /// 초기 데이터값으로 돌리기위한 함수
-    /// </summary>
-    public override void ResetData()
-    {
-        if (unitObject != null) //유닛이 있는 것들은 
-        {
-            DataReset();
-        }
-        base.ResetData();            //맴버도 풀로돌린다.
-    }
-
-    /// <summary>
     /// 군체 정렬기준점을 자신의위치로 갱신하는 함수
     /// </summary>
     public Vector3 SetFlockingDirectionPos()
     {
         return flockingDirectionPos = transform.position;
     }
+
+    /// <summary>
+    /// 유닛이 죽었을때 실행할 함수
+    /// </summary>
+    private void OnDie() 
+    {
+        onDie?.Invoke(this);    //죽었다고 신호보내고 
+        ResetData();
+    }
+
+
+    /// <summary>
+    /// 초기 데이터값으로 돌리기위한 함수
+    /// 항상들고다닐것이기때문에 풀로 돌리는 작업은 제외시켰다.
+    /// </summary>
+    public override void ResetData()
+    {
+        if (unitObject != null) 
+        {
+            UnitReset();
+        }
+        isLeader = false;
+        flockingDirectionPos = Vector3.zero;
+        flockingIndex = -1;
+        transform.position = Vector3.zero;
+    }
+
+    /// <summary>
+    /// 유닛이 셋팅 되있는경우 데이터 초기화하기위한 함수
+    /// </summary>
+    private void UnitReset()
+    {
+        unitObject.ResetData();     // 유닛 풀로 돌리고 
+        unitObject = null;          // 값 초기화 
+        unitData.onDie = null;
+        unitData = null;
+        parentNode.onAssemble -= OnAssemble;
+        parentNode.onMove -= CharcterMove;
+        parentNode.onStop -= OnFlockingMovingStop;
+        parentNode = null;
+        charcterMoveProcess.OnMovingStop();
+        charcterMoveProcess = null;
+    }
+
+   
 }

@@ -1,8 +1,12 @@
+using System;
 using System.Collections;
+using Unity.VisualScripting;
 using UnityEngine;
 
 /// <summary>
 /// 캐릭터 이동 로직 
+/// 좌표로 하고있는데 
+/// 인제 타일좌표로 이동로직변경을해야된다.
 /// </summary>
 public class UnitMoveController : MonoBehaviour, IMoveBase
 {
@@ -46,8 +50,10 @@ public class UnitMoveController : MonoBehaviour, IMoveBase
 
     protected virtual void Awake()
     {
-        moveCoroutine = CharcterMoveCoroutine(transform.position, 0.0f); //StopCoroutine Null레퍼런스 Expection 방지용
+        moveCoroutine = RigidBodyCharcterMove(transform.position, 0.0f);
+        //moveCoroutine = CharcterMoveCoroutine(transform.position, 0.0f); //StopCoroutine Null레퍼런스 Expection 방지용
     }
+
 
     /// <summary>
     /// 초기값 셋팅하는 함수
@@ -56,7 +62,7 @@ public class UnitMoveController : MonoBehaviour, IMoveBase
     {
         moveTarget = transform.parent;
         charcterRigidbody = moveTarget.GetComponent<Rigidbody>();
-        CapsuleCollider collider = moveTarget.GetComponent<CapsuleCollider>();
+        CapsuleCollider collider = GetComponent<CapsuleCollider>();
         colliderSize = collider.radius;
     }
 
@@ -98,9 +104,9 @@ public class UnitMoveController : MonoBehaviour, IMoveBase
     {
         OnRigidMove(direction,distance);
         return;
-        StopCoroutine(moveCoroutine);
-        moveCoroutine = CharcterMoveCoroutine(direction,distance);
-        StartCoroutine(moveCoroutine);
+        //StopCoroutine(moveCoroutine);
+        //moveCoroutine = CharcterMoveCoroutine(direction,distance);
+        //StartCoroutine(moveCoroutine);
     }
 
     /// <summary>

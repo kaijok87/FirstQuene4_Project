@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Pool_FlockingMember : PoolBase<FlockingMemberNodeData>
+public class Pool_FlockingMember : PoolBase<BattleMapTeamMember>
 {
 
 }

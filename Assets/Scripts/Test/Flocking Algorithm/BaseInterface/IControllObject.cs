@@ -48,7 +48,7 @@ public interface IControllObject
     /// <param name="parnetNode">부모 군체</param>
     /// <param name="flockingPos">군체에서의 자신의 위치값</param>
     /// <param name="index">자신의 인덱스값</param>
-    void InitDataSetting(FlockingManager parnetNode, PoolObj_Unit unitObject, Vector3 flockingPos , int index);
+    void InitDataSetting(BattleMapTeamManager parnetNode, PoolObj_Unit unitObject, Vector3 flockingPos , int index);
 
     /// <summary>
     /// 셋팅된 데이터 초기화 
