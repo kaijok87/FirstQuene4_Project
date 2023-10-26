@@ -2,6 +2,10 @@ using System;
 using System.Collections;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.UIElements;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 /// <summary>
 /// 캐릭터 이동 로직 
@@ -26,17 +30,15 @@ public class UnitMoveController : MonoBehaviour, IMoveBase
     float colliderSize = 0.0f;
 
     /// <summary>
+    /// 충돌한 장애물의 콜라이더 반지름 크기
+    /// </summary>
+    //float propCollisionSize = 0.0f;
+
+    /// <summary>
     /// 최종 이동위치에서 감산할 거리값 
     /// 타겟이있을경우 타겟 반지름 + 캐릭터반지름 값 없는경우 0으로셋팅
     /// </summary>
     float moveDistanceSubtractiveOperation;
-
-    /// <summary>
-    /// 캐릭터의 이동속도 
-    /// </summary>
-    [SerializeField]
-    [Range(0.01f,20.0f)]
-    float charcterMoveSpeed = 1.0f;
 
     /// <summary>
     /// 도착했는지 체크할 변수값
@@ -48,6 +50,8 @@ public class UnitMoveController : MonoBehaviour, IMoveBase
     /// </summary>
     IEnumerator moveCoroutine;
 
+    IUnitStateTable unitData;
+
     protected virtual void Awake()
     {
         moveCoroutine = RigidBodyCharcterMove(transform.position, 0.0f);
@@ -57,14 +61,15 @@ public class UnitMoveController : MonoBehaviour, IMoveBase
 
     /// <summary>
     /// 초기값 셋팅하는 함수
+    /// <param name="colliderRadius">내자신의 콜라이더 반지름크기</param>
     /// </summary>
-    public void InitDataSetting() 
+    public void InitDataSetting(float colliderRadius) 
     {
         moveTarget = transform.parent;
         charcterRigidbody = moveTarget.GetComponent<Rigidbody>();
-        CapsuleCollider collider = GetComponent<CapsuleCollider>();
-        colliderSize = collider.radius;
+        colliderSize = colliderRadius;
     }
+
 
 
     /// <summary>
@@ -103,9 +108,9 @@ public class UnitMoveController : MonoBehaviour, IMoveBase
     public void OnMove(Vector3 direction, float distance) 
     {
         OnRigidMove(direction,distance);
-        return;
+        //return;
         //StopCoroutine(moveCoroutine);
-        //moveCoroutine = CharcterMoveCoroutine(direction,distance);
+        //moveCoroutine = CharcterMoveCoroutine(direction, distance);
         //StartCoroutine(moveCoroutine);
     }
 
@@ -132,9 +137,22 @@ public class UnitMoveController : MonoBehaviour, IMoveBase
 #endif
 
         float checkValue = checkingInterval + moveDistanceSubtractiveOperation;                     // 이동할 거리 값
-        while ((endPos - moveTarget.position).sqrMagnitude > checkValue)
+        float timeDeltaValue = 0.0f;
+        float dirMag = (endPos - moveTarget.position).sqrMagnitude;
+        float tempValue = 0.0f;
+        while (dirMag > checkValue)
         {
-            moveTarget.Translate(Time.deltaTime * charcterMoveSpeed * direction, Space.World);       // 특정방향으로 이동속도만큼 이동시킨다.
+            timeDeltaValue = Time.deltaTime;
+            moveTarget.Translate(timeDeltaValue * unitData.UnitRealTimeState.MoveRange * direction, Space.World);     // 특정방향으로 이동속도만큼 이동시킨다.
+            
+            tempValue = (endPos - moveTarget.position).sqrMagnitude;    //진행상황임시로저장하고 
+
+            if (dirMag < tempValue) //이동간격은 좁아져야하는데  거리가 넓어졌다는것은 도착점을 지나쳤다는것이니 
+            {
+                direction = (endPos - moveTarget.position).normalized; //방향을 다시잡는다
+            }
+            dirMag = tempValue;  //체크할 변수에 셋팅한다.
+            transform.localPosition = Vector3.zero;
             yield return null;                                                                      // 프레임마다.
         }
 
@@ -170,11 +188,34 @@ public class UnitMoveController : MonoBehaviour, IMoveBase
     /// <param name="distance">이동할 거리</param>
     public virtual void OnRigidMove(Vector3 direction, float distance)
     {
+        //isRigid = true;
+        //direction_Value = direction ;
+        //endPos = moveTarget.position + (direction * distance);
+        //tempValue = (endPos - moveTarget.position).sqrMagnitude;
+        //a = tempValue;
         StopCoroutine(moveCoroutine);
         moveCoroutine = RigidBodyCharcterMove(direction, distance);
         StartCoroutine(moveCoroutine);
     }
 
+    //bool isRigid = false;
+    //Vector3 direction_Value;
+    //Vector3 endPos;
+    //float tempValue;
+    //float a;
+    //private void FixedUpdate()
+    //{
+    //    if (isRigid) 
+    //    {
+    //        charcterRigidbody.MovePosition(moveTarget.position + Time.fixedDeltaTime * charcterMoveSpeed * direction_Value);
+    //        tempValue = (endPos - moveTarget.position).sqrMagnitude;
+    //        if (tempValue < a) 
+    //        {
+    //            direction_Value = (endPos - moveTarget.position).normalized;
+    //        }
+    //        a = tempValue;
+    //    }
+    //}
 
     /// <summary>
     /// 캐릭터 이동속도 에 비례하여 
@@ -196,34 +237,55 @@ public class UnitMoveController : MonoBehaviour, IMoveBase
         float tempValue = 0.0f;     //방향을 다시잡아야할때 사용할 변수
         while (sqlMagnitudeValue  > checkValue)
         {
-            charcterRigidbody.MovePosition(moveTarget.position + Time.deltaTime * charcterMoveSpeed * direction);
+            //charcterRigidbody.MovePosition(moveTarget.position + tempValue * propCollisionSize * direction);      // 충돌한 장애물 반지름 만큼 밀리도록 만든다.
+            charcterRigidbody.MovePosition(moveTarget.position + Time.fixedDeltaTime * unitData.UnitRealTimeState.MoveSpeed * direction);
             yield return fixedWait;
+            Debug.Log(charcterRigidbody.velocity);
             tempValue = (endPos - moveTarget.position).sqrMagnitude;    //진행상황임시로저장하고 
             if (sqlMagnitudeValue  < tempValue) //이동간격은 좁아져야하는데  거리가 넓어졌다는것은 도착점을 지나쳤다는것이니 
             {
-                
                 direction = (endPos - moveTarget.position).normalized; //방향을 다시잡는다
             }
             sqlMagnitudeValue = tempValue;  //체크할 변수에 셋팅한다.
+            transform.localPosition = Vector3.zero;
         }
         //Debug.Log($"end :{(endPos - moveTarget.position).sqrMagnitude} > {checkValue}");
         charcterRigidbody.MovePosition(endPos);
     }
 
+  
 
 #if UNITY_EDITOR
 
     [SerializeField]
     Color gizmosColor = Color.black;
 
+    [SerializeField]
+    float moveRange = 5.0f;
+    [SerializeField]
+    float attackRange = 8.0f;
     Vector3 gizmosEndPos = Vector3.zero;
+
 
     private void OnDrawGizmos()
     {
         Gizmos.color = gizmosColor;
-        if(moveTarget != null)
-        Gizmos.DrawLine(moveTarget.position , gizmosEndPos);
+
+
+
+        if (moveTarget != null)
+        {
+            Gizmos.DrawLine(moveTarget.position, gizmosEndPos);
+            Handles.color = Color.blue;
+            Handles.DrawWireDisc(moveTarget.position, moveTarget.up, moveRange);
+
+            Handles.color = Color.red;
+            Handles.DrawWireDisc(moveTarget.position, moveTarget.up, attackRange);
+        }
+
     }
+
+
 
 
 #endif

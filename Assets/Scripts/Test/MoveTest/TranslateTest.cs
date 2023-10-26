@@ -1,8 +1,10 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.Data.Common;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
+
 
 public class TranslateTest : TestBase
 {
@@ -23,6 +25,7 @@ public class TranslateTest : TestBase
 
     [SerializeField]
     GameSpeedType tempSType;
+
     [SerializeField]
     Vector3[] flockingPos =
         {
@@ -33,20 +36,33 @@ public class TranslateTest : TestBase
             new Vector3(-2,0,10),new Vector3(5,0,0),new Vector3(5,0,2), new Vector3(5,0,5)
 
         };
-
+    UnitData[] testCreateUnitArray;
+    [SerializeField]
+    UnitDataBaseNode[] unitTests;
+    UnitSearchController testSearch;
+    
     protected override void Awake()
     {
         base.Awake();
         target_1_Collider = target_1.GetComponent<CapsuleCollider>();
-        target_2_Collider = target_1.GetComponent<CapsuleCollider>();
+        target_2_Collider = target_2.GetComponent<CapsuleCollider>();
+        for (int i = 0; i < unitTests.Length; i++)
+        {
+            if (unitTests[i] != null)
+            {
+                testCreateUnitArray[i] = unitTests[i].UnitData;
+            }
+        }
     }
 
     protected override void Test1(InputAction.CallbackContext context)
     {
-        if (flockingManager.MemberArray[0].UnitData == null) 
+
+        if (flockingManager.LeaderUnit == null)
         {
             flockingManager.SetFlockingPosArray(flockingPos);
-            flockingManager.InitData();
+            flockingManager.InitData(testCreateUnitArray);
+            testSearch = flockingManager.LeaderUnit.transform.GetComponentInChildren<UnitSearchController>();
         }
     }
     protected override void Test2(InputAction.CallbackContext context)
@@ -63,18 +79,38 @@ public class TranslateTest : TestBase
     }
     protected override void Test5(InputAction.CallbackContext context)
     {
-        flockingManager.SettingFlockingPos();
+        //flockingManager.SetFlockingPosArray(flockingPos);
+        foreach (BattleMapTeamMember bt in flockingManager.MemberArray)
+        {
+            if (bt != null)
+            {
+                bt.ResetList();
+            }
+        }
+
     }
     protected override void TestRightClick(InputAction.CallbackContext context)
     {
+        GameManager.Instance.GameSpeedType = tempSType;
         Vector3 screenPos = Mouse.current.position.value;
         screenPos.z = cameraZPos;
-        Vector3 worldPos = Camera.main.ScreenToWorldPoint(screenPos); 
+        Vector3 worldPos = Camera.main.ScreenToWorldPoint(screenPos);
         flockingManager.OnFlockingMove(worldPos);
     }
     protected override void TestLeftClick(InputAction.CallbackContext context)
     {
-        GameManager.Instance.GameSpeedType = tempSType;
+        foreach (BattleMapTeamMember bt in flockingManager.MemberArray) 
+        {
+            if (bt != null) 
+            {
+                //bt.SeTList();
+            }
+        }
+
+        //if (testSearch != null) 
+        //{
+        //    Debug.Log( testSearch.GetSearchTarget());
+        //}
 
     }
     /// <summary>

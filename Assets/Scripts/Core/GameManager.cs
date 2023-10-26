@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Unity.Collections;
 using UnityEngine;
 
@@ -17,8 +18,21 @@ public enum GameSpeedType
     OctupleFast     = 800,          // 8  배속
 }
 
-public class GameManager : DontDistroySingleton<GameManager>
+
+public class GameManager : DontDestroySingleton<GameManager>
 {
+    /// <summary>
+    /// 게임플레이도중에 아군 유닛 을 담아둘 배열
+    /// </summary>
+    UnitData[] unitDatas;
+    public UnitData[] UnitDatas => unitDatas;
+
+    /// <summary>
+    /// 게임도중 죽은유닛 담아둘 클래스
+    /// </summary>
+    DeadUnitTable deadUnitTable;
+    public DeadUnitTable DeadUnitTable => deadUnitTable;
+
     /// <summary>
     /// 게임속도 조절용 이넘 값
     /// 게임속도 연산변수 조절용 
@@ -71,7 +85,11 @@ public class GameManager : DontDistroySingleton<GameManager>
 
 
 
-
+    protected override void Awake()
+    {
+        base.Awake();
+        deadUnitTable = new DeadUnitTable();
+    }
 
 
 
@@ -102,7 +120,7 @@ public class GameManager : DontDistroySingleton<GameManager>
 
 
 #if UNITY_EDITOR
-    
+
     GameSpeedType tempGameSpeedType = GameSpeedType.Nomal;
     private void OnValidate()
     {

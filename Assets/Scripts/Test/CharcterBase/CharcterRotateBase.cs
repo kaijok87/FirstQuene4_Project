@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
 public class CharcterRotateBase : MonoBehaviour
 {
     /// <summary>
@@ -16,42 +15,48 @@ public class CharcterRotateBase : MonoBehaviour
     /// </summary>
     IEnumerator rotateCoroutine;
 
-    private void Awake()
+    public void InitDataSetting() 
     {
-        rotateCoroutine = CharcterRotateCoroutine();
+        rotateCoroutine = CharcterRotateCoroutine(Vector3.zero);
     }
 
     /// <summary>
     /// 순차적으로 회전 처리할 함수
     /// </summary>
-    public void OnRotateRealTime() 
+    public void OnRotateRealTime(Vector3 dir) 
     {
         StopCoroutine(rotateCoroutine);
-        rotateCoroutine = CharcterRotateCoroutine();
+        rotateCoroutine = CharcterRotateCoroutine(dir);
         StartCoroutine(rotateCoroutine);
     }
 
+   
     /// <summary>
-    /// 한번에 회전 처리할 함수
+    /// 방향백터를 받아서 바로 회전시켜버리는 함수
     /// </summary>
-    public void OnRotate(Vector3 eulers) 
+    /// <param name="dir">방향백터</param>
+    public void OnRotate(Vector3 dir) 
     {
-        transform.Rotate(eulers);
+        transform.Rotate(dir);
     }
 
     /// <summary>
     /// 순차적으로 회전 적용할 코루틴
     /// </summary>
-    IEnumerator CharcterRotateCoroutine() 
+    IEnumerator CharcterRotateCoroutine(Vector3 dir) 
     {
         float timeElaspad = 0.0f;
+        dir.y = 0.0f;
+        Quaternion lookDir = Quaternion.LookRotation(dir);
+
+        //Debug.Log($"시작{lookDir}");
         while (timeElaspad < 1.0f) 
         {
-            timeElaspad += Time.deltaTime * charcterRotateSpeed;
-
-
-
+            timeElaspad += Time.fixedDeltaTime * charcterRotateSpeed;
+            transform.rotation = Quaternion.Slerp(transform.rotation,lookDir,Time.fixedDeltaTime * charcterRotateSpeed);
             yield return null;
         }
+        transform.rotation = lookDir;
+        //Debug.Log("회전끝");
     }
 }

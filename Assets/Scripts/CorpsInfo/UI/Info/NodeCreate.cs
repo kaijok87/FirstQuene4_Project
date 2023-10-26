@@ -28,11 +28,17 @@ public enum Info_Name
     CD,         //크리티컬 데미지
 }
 /// <summary>
-/// 유닛 상태 
+/// 전투맵에서의 유닛의 실시간 상태값
 /// </summary>
 public enum UnitCondition
 {
-
+    Wait = 0,     // 대기
+    Move,         // 이동
+    Stop,         // 정지
+    Run,          // 도망
+    Attack,       // 공격
+    TakingDamage, // 피격상태
+    Stun,         // 스턴
 }
 
 public class NodeCreate : MonoBehaviour

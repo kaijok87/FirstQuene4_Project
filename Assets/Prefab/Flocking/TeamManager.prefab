@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 7635795660966084978}
   - component: {fileID: 7635795660966084979}
   m_Layer: 0
-  m_Name: FlockingMain
+  m_Name: TeamManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -41,6 +41,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 7635795660966084981}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 60ae0d70b6b231b46826ca26ada2c142, type: 3}
+  m_Script: {fileID: 11500000, guid: 6352ec9afa7252d46bc18d3e06c85e78, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  memberCapacity: 20

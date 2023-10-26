@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 
-public class DontDistroySingleton<T> : MonoBehaviour where T : Component
+public class DontDestroySingleton<T> : MonoBehaviour where T : Component
 {
     static bool isShutDown = false;
     static T instance;

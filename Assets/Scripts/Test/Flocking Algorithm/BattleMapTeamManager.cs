@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 /// <summary>
 /// 메인캐릭터(리더) 의 숨겨진능력치 
@@ -38,7 +39,7 @@ public struct HiddenLeaderAbility
 ///  
 /// 2. 군체 맴버에 유닛이 등록됬는지 체크하는 로직을위해 체크할 값을 정해야한다 현재 transform 으로 기본 셋팅해놨다. 비트로 비교할수있으면 해보도록하자 
 /// </summary>
-public class BattleMapTeamManager : MonoBehaviour
+public class BattleMapTeamManager : MonoBehaviour 
 {
     /// <summary>
     /// 히든 속성 정보
@@ -56,7 +57,7 @@ public class BattleMapTeamManager : MonoBehaviour
     /// <summary>
     /// 군체의 중심에 있는 기준점이될 유닛의 위치 
     /// </summary>
-    public IControllObject FlockingCenterPos => leaderUnit;
+    public IControllObject LeaderUnit => leaderUnit;
 
     [SerializeField]
     int memberCapacity = 20;
@@ -83,7 +84,7 @@ public class BattleMapTeamManager : MonoBehaviour
     /// 군체의 분포위치를 저장할 백터값
     /// </summary>
     Vector3[] flockingPosArray;
-    
+
 
 
 
@@ -92,6 +93,11 @@ public class BattleMapTeamManager : MonoBehaviour
     /// 정해진 군체 모양으로 집합하라고 신호를 보내는 델리게이트
     /// </summary>
     public Action<Vector3> onAssemble;
+
+    /// <summary>
+    /// 군체이동처리 시 같이 회전처리하기위한 델리게이트 회전 따로 할수도있을거같아서 뺏다.
+    /// </summary>
+    public Action<Vector3> onRotate;
 
     /// <summary>
     /// 군체 배열의 이동신호를 보낸다.
@@ -120,7 +126,6 @@ public class BattleMapTeamManager : MonoBehaviour
         {
             memberArray[i] = (IControllObject)BattleMapFactory.Instance.GetObject(BattleMapPoolNames.FlockingMember, transform);
         }
-
     }
 
 
@@ -148,27 +153,46 @@ public class BattleMapTeamManager : MonoBehaviour
     /// 군체 맴버 셋팅하는 함수 
     /// 매번 새롭게 리스트를 셋팅 하기때문에 자주실행하면 안좋다.
     /// </summary>
-    public void InitData()
+    public void InitData(UnitData[] units)
     {
-        PoolObj_Unit unitObject = (PoolObj_Unit)BattleMapFactory.Instance.GetObject(BattleMapPoolNames.FlockingUnit, memberArray[0].transform);
-        memberArray[0].InitDataSetting(this, unitObject, flockingPosArray[0], 0);
-        memberArray[0].onDie += UnitDieAndNextLeaderSetting;
-        memberArray[0].IsLeader = true;
-        leaderUnit = memberArray[0];
-        
-
-        int forSize = memberArray.Length;
-        for (int i = 1; i < forSize; i++)
+        if (units != null && units.Length < memberArray.Length) //들어온 유닛 수가 
         {
-            unitObject = (PoolObj_Unit)BattleMapFactory.Instance.GetObject(BattleMapPoolNames.FlockingUnit, memberArray[i].transform);
-            memberArray[i].InitDataSetting(this, unitObject , flockingPosArray[i], i);
-            memberArray[i].onDie += UnitDieAndNextLeaderSetting;
+            //livingMemberList.Clear();     // 혹시 남겨진 데이터있으면 초기화 시키고 
+            //leaderUnit = null;            // 혹시 초기화 안된 리더 설정 초기화
+            int forSize = units.Length;
+            for (int i = 0; i < forSize; i++)
+            {
+                if (units[i] != null) //배열 중간중간 비어있는 값이 존재함으로 
+                {
+                    memberArray[i].InitDataSetting(
+                            this,
+                            (UnitDataBaseNode)BattleMapFactory.Instance.GetUnit(units[i].UnitDataBase.UnitType, memberArray[i].transform), //팩토리 데이터 꺼내기
+                            i
+                            );
+                    if (leaderUnit == null) //첫번째 유닛에 리더를 설정 
+                    {
+                        leaderUnit = memberArray[i];
+                        leaderUnit.IsLeader = true;
+                    }
+                    memberArray[i].FlockingDirectionPos = flockingPosArray[i] - flockingPosArray[leaderUnit.ArrayIndex];
+                    OnAppendAction(memberArray[i]);
+                    livingMemberList.Add(memberArray[i]);
+                    memberArray[i].transform.position = leaderUnit.transform.position + memberArray[i].FlockingDirectionPos;
+                }
+            }
+
         }
-        livingMemberList = new List<IControllObject>(memberArray);
-        //Debug.Log($"{onAssemble} , {onMove} , {onStop}");
+        else 
+        {
+            Debug.LogWarning($"초기화할 데이터가 존재하지 않습니다 data : {units}");
+        }
     }
 
-    private void SettingHiddenLeaderAbility(PoolObj_Unit unit) 
+    /// <summary>
+    /// 리더의 숨겨진 속성을 찾아서 히든 속성에 적용하는함수 
+    /// </summary>
+    /// <param name="unit">리더 유닛</param>
+    private void SettingHiddenLeaderAbility(UnitDataBaseNode unit) 
     {
 
     }
@@ -177,25 +201,52 @@ public class BattleMapTeamManager : MonoBehaviour
     /// <summary>
     /// 맴버군체에 유닛을 추가하는 함수
     /// </summary>
-    /// <param name="unit">추가할 유닛</param>
+    /// <param name="surrenderUnit">추가할 맴버</param>
     /// <returns>성공여부 성공true  실패 false</returns>
-    public bool AppendUnit(PoolObj_Unit unit) 
+    public bool AppendUnit(UnitDataBaseNode surrenderUnit) 
     {
         int oldIndex = 0;
         int nextIndex = 0;
         foreach (IControllObject member in livingMemberList) //순차적으로 돌아서 
         {
             nextIndex = member.ArrayIndex;  //배열인덱스값을 가져와서 
-            if (oldIndex < nextIndex) //0번부터 비교를 하는데 기본적으로 꽉차있는경우 같은값이라서 해당조건에 안걸려야한다.
+            if (oldIndex < nextIndex) //0번부터 비교를 하는데 기본적으로 꽉차있는경우 같은값이라서 해당조건에 안걸려야한다. 리스트 순서도 같기때문에 
             {
                 //next가 크다는것은 배열에도 빈값이 존재한다는 것이니 데이터 셋팅
-                unit.transform.SetParent(memberArray[oldIndex].transform);                                  // 부모 설정하고 
-                memberArray[oldIndex].InitDataSetting(this, unit, flockingPosArray[oldIndex], oldIndex);    // 데이터 초기화 
-                memberArray[oldIndex].onDie += UnitDieAndNextLeaderSetting;                                 // 죽는함수 연결
+                surrenderUnit.transform.SetParent(memberArray[oldIndex].transform);                                     // 추가될 유닛의 부모 설정하고 
+                memberArray[oldIndex].InitDataSetting(this, surrenderUnit, oldIndex);       // 데이터 초기화 
+                memberArray[oldIndex].FlockingDirectionPos = flockingPosArray[oldIndex] - flockingPosArray[leaderUnit.ArrayIndex];
+                OnAppendAction(memberArray[oldIndex]);
                 livingMemberList.Insert(oldIndex, memberArray[oldIndex]); //링크드 리스트로 바꿀가... ArrayList형식이라서 배열가지고 노는거라 일일이 순서변경된다는데..
                 return true;
             }
             oldIndex ++;    //0번부터 순차적으로 인덱스 비교하기위해 증가
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// 맴버로 추가될 유닛을 받아서 처리하는함수
+    /// </summary>
+    /// <param name="surrenderUnit">추가될 맴버 </param>
+    /// <returns>성공여부 성공시 true  실패시 false</returns>
+    public bool AppendUnit(IControllObject surrenderUnit) 
+    {
+        return AppendUnit(surrenderUnit.UnitObject);
+    }
+
+    /// <summary>
+    /// 현재 팀에서 항복할 유닛이 target 팀으로 이동 하기위한 함수
+    /// </summary>
+    /// <param name="member">항복한 맴버</param>
+    /// <returns>항복 성공시 true 실패시 false </returns>
+    public bool SurrenderUnit(IControllObject member) 
+    {
+        if (AppendUnit(member)) //유닛 추가 시도
+        { 
+            //성공시 
+            member.SurrenderDataReset(); //기존 맴버쪽의 데이터 초기화 실행 
+            return true;
         }
         return false;
     }
@@ -221,6 +272,7 @@ public class BattleMapTeamManager : MonoBehaviour
     {
         leaderUnit?.OnAssemble(movePos);
         onAssemble?.Invoke(movePos);
+        onRotate?.Invoke(movePos);
     }
 
     /// <summary>
@@ -229,6 +281,7 @@ public class BattleMapTeamManager : MonoBehaviour
     public void OnAssemble() 
     {
         onAssemble?.Invoke(leaderUnit.transform.position);
+        onRotate?.Invoke(leaderUnit.transform.position);
     }
 
     /// <summary>
@@ -239,6 +292,7 @@ public class BattleMapTeamManager : MonoBehaviour
         foreach (IControllObject member in memberArray)
         {
             member.ResetData();
+            OnRemoveAction(member);
         }
         leaderUnit = null;
         livingMemberList.Clear();
@@ -268,7 +322,20 @@ public class BattleMapTeamManager : MonoBehaviour
             //해당군체는 전멸했으니 처리할 로직 작성 
         }
     }
-
+    
+    private void OnAppendAction(IControllObject member)
+    {
+        member.onDie += UnitDieAndNextLeaderSetting;
+        //member.onCollisionOnOff += member.CharcterMoveProcess.PropIsCollision;
+    }
+    private void OnRemoveAction(IControllObject member)
+    {
+        member.onDie -= UnitDieAndNextLeaderSetting;
+        //if (member.CharcterMoveProcess != null) 
+        //{
+        //    member.onCollisionOnOff -= member.CharcterMoveProcess.PropIsCollision;
+        //}
+    }
 
 }
 
