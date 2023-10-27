@@ -24,17 +24,12 @@ public interface IControllObject
     /// <summary>
     /// 해당군체 맴버에 등록된 유닛
     /// </summary>
-    IUnitStateTable UnitData { get; }
+    IUnitDefaultBase UnitData { get; }
 
     /// <summary>
     /// 유닛 움직이는 로직 
     /// </summary>
     public IMoveBase CharcterMoveProcess { get; }
-
-    /// <summary>
-    /// 유닛객체를 관리할 풀 객체 
-    /// </summary>
-    UnitDataBaseNode UnitObject { get; }
 
     /// <summary>
     /// 맴버객체가 리더위치에서 얼마나떨어져있는지에대한 위치값
@@ -66,9 +61,9 @@ public interface IControllObject
     /// 데이터 초기화할 함수
     /// </summary>
     /// <param name="parnetNode">부모 군체</param>
-    /// <param name="flockingPos">군체에서의 자신의 위치값</param>
+    /// <param name="unitData">유닛 정보 </param>
     /// <param name="index">자신의 인덱스값</param>
-    void InitDataSetting(BattleMapTeamManager parnetNode, UnitDataBaseNode unitObject , int index);
+    void InitDataSetting(TeamObject parnetNode, IUnitDefaultBase unitData , int index);
 
     /// <summary>
     /// 셋팅된 데이터 초기화 

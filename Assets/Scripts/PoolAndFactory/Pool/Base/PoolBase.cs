@@ -13,13 +13,13 @@ public class PoolBase<T> : MonoBehaviour where T : PoolObjectBase
     /// 현재 배열크기
     /// </summary>
     [SerializeField]
-    int capasity = 0;
+    protected int capasity = 0;
 
     /// <summary>
     /// 풀을 생성할 기본 프리팹
     /// </summary>
     [SerializeField]
-    T poolPrefab;
+    protected T poolPrefab;
 
     /// <summary>
     /// 생성된 프리팹이 들어갈 배열 
@@ -109,5 +109,9 @@ public class PoolBase<T> : MonoBehaviour where T : PoolObjectBase
         PoolDataSetting(capasity);
         
         capasity = newCapasity;
-    } 
+    }
+
+    public virtual void SetPrefab(T prefab) 
+    {
+    }
 }

@@ -39,7 +39,7 @@ public struct HiddenLeaderAbility
 ///  
 /// 2. 군체 맴버에 유닛이 등록됬는지 체크하는 로직을위해 체크할 값을 정해야한다 현재 transform 으로 기본 셋팅해놨다. 비트로 비교할수있으면 해보도록하자 
 /// </summary>
-public class BattleMapTeamManager : MonoBehaviour 
+public class TeamObject : PoolObjectBase 
 {
     /// <summary>
     /// 히든 속성 정보
@@ -71,6 +71,7 @@ public class BattleMapTeamManager : MonoBehaviour
     /// </summary>
     IControllObject[] memberArray;
     public IControllObject[] MemberArray => memberArray;
+
     /// <summary>
     /// 군체이동시킬 유닛이 실질적으로 처리될 리스트
     /// 배틀맵에서 군체 이동 연산처리용으로 사용할 리스트 
@@ -84,9 +85,6 @@ public class BattleMapTeamManager : MonoBehaviour
     /// 군체의 분포위치를 저장할 백터값
     /// </summary>
     Vector3[] flockingPosArray;
-
-
-
 
 
     /// <summary>
@@ -124,7 +122,7 @@ public class BattleMapTeamManager : MonoBehaviour
         livingMemberList = new(memberCapacity);
         for (int i = 0; i < memberCapacity; i++)
         {
-            memberArray[i] = (IControllObject)BattleMapFactory.Instance.GetObject(BattleMapPoolNames.FlockingMember, transform);
+            memberArray[i] = (IControllObject)BattleMapFactory.Instance.GetObject(BattleMapObjectPools.FlockingMember, transform);
         }
     }
 
@@ -152,6 +150,7 @@ public class BattleMapTeamManager : MonoBehaviour
     /// <summary>
     /// 군체 맴버 셋팅하는 함수 
     /// 매번 새롭게 리스트를 셋팅 하기때문에 자주실행하면 안좋다.
+    /// <param name="units"> 맴버에 추가될 유닛들</param>
     /// </summary>
     public void InitData(UnitData[] units)
     {
@@ -164,20 +163,20 @@ public class BattleMapTeamManager : MonoBehaviour
             {
                 if (units[i] != null) //배열 중간중간 비어있는 값이 존재함으로 
                 {
-                    memberArray[i].InitDataSetting(
-                            this,
-                            (UnitDataBaseNode)BattleMapFactory.Instance.GetUnit(units[i].UnitDataBase.UnitType, memberArray[i].transform), //팩토리 데이터 꺼내기
-                            i
-                            );
-                    if (leaderUnit == null) //첫번째 유닛에 리더를 설정 
-                    {
-                        leaderUnit = memberArray[i];
-                        leaderUnit.IsLeader = true;
-                    }
-                    memberArray[i].FlockingDirectionPos = flockingPosArray[i] - flockingPosArray[leaderUnit.ArrayIndex];
-                    OnAppendAction(memberArray[i]);
-                    livingMemberList.Add(memberArray[i]);
-                    memberArray[i].transform.position = leaderUnit.transform.position + memberArray[i].FlockingDirectionPos;
+                    //memberArray[i].InitDataSetting(
+                    //        this,
+                    //        (UnitDataBaseNode)BattleMapFactory.Instance.GetUnit(units[i].UnitDataBase.UnitType, memberArray[i].transform), //팩토리 데이터 꺼내기
+                    //        i
+                    //        );
+                    //if (leaderUnit == null) //첫번째 유닛에 리더를 설정 
+                    //{
+                    //    leaderUnit = memberArray[i];
+                    //    leaderUnit.IsLeader = true;
+                    //}
+                    //memberArray[i].FlockingDirectionPos = flockingPosArray[i] - flockingPosArray[leaderUnit.ArrayIndex];
+                    //OnAppendAction(memberArray[i]);
+                    //livingMemberList.Add(memberArray[i]);
+                    //memberArray[i].transform.position = leaderUnit.transform.position + memberArray[i].FlockingDirectionPos;
                 }
             }
 
@@ -192,7 +191,7 @@ public class BattleMapTeamManager : MonoBehaviour
     /// 리더의 숨겨진 속성을 찾아서 히든 속성에 적용하는함수 
     /// </summary>
     /// <param name="unit">리더 유닛</param>
-    private void SettingHiddenLeaderAbility(UnitDataBaseNode unit) 
+    private void SettingHiddenLeaderAbility(UnitBaseNode unit) 
     {
 
     }
@@ -201,9 +200,9 @@ public class BattleMapTeamManager : MonoBehaviour
     /// <summary>
     /// 맴버군체에 유닛을 추가하는 함수
     /// </summary>
-    /// <param name="surrenderUnit">추가할 맴버</param>
+    /// <param name="surrenderUnit">추가할 유닛</param>
     /// <returns>성공여부 성공true  실패 false</returns>
-    public bool AppendUnit(UnitDataBaseNode surrenderUnit) 
+    public bool AppendUnit(IUnitDefaultBase surrenderUnit) 
     {
         int oldIndex = 0;
         int nextIndex = 0;
@@ -213,8 +212,8 @@ public class BattleMapTeamManager : MonoBehaviour
             if (oldIndex < nextIndex) //0번부터 비교를 하는데 기본적으로 꽉차있는경우 같은값이라서 해당조건에 안걸려야한다. 리스트 순서도 같기때문에 
             {
                 //next가 크다는것은 배열에도 빈값이 존재한다는 것이니 데이터 셋팅
-                surrenderUnit.transform.SetParent(memberArray[oldIndex].transform);                                     // 추가될 유닛의 부모 설정하고 
-                memberArray[oldIndex].InitDataSetting(this, surrenderUnit, oldIndex);       // 데이터 초기화 
+                //surrenderUnit.transform.SetParent(memberArray[oldIndex].transform);                    // 추가될 유닛의 부모 설정하고 
+                memberArray[oldIndex].InitDataSetting(this, surrenderUnit, oldIndex);               // 데이터 초기화 
                 memberArray[oldIndex].FlockingDirectionPos = flockingPosArray[oldIndex] - flockingPosArray[leaderUnit.ArrayIndex];
                 OnAppendAction(memberArray[oldIndex]);
                 livingMemberList.Insert(oldIndex, memberArray[oldIndex]); //링크드 리스트로 바꿀가... ArrayList형식이라서 배열가지고 노는거라 일일이 순서변경된다는데..
@@ -225,15 +224,6 @@ public class BattleMapTeamManager : MonoBehaviour
         return false;
     }
 
-    /// <summary>
-    /// 맴버로 추가될 유닛을 받아서 처리하는함수
-    /// </summary>
-    /// <param name="surrenderUnit">추가될 맴버 </param>
-    /// <returns>성공여부 성공시 true  실패시 false</returns>
-    public bool AppendUnit(IControllObject surrenderUnit) 
-    {
-        return AppendUnit(surrenderUnit.UnitObject);
-    }
 
     /// <summary>
     /// 현재 팀에서 항복할 유닛이 target 팀으로 이동 하기위한 함수
@@ -242,7 +232,7 @@ public class BattleMapTeamManager : MonoBehaviour
     /// <returns>항복 성공시 true 실패시 false </returns>
     public bool SurrenderUnit(IControllObject member) 
     {
-        if (AppendUnit(member)) //유닛 추가 시도
+        if (AppendUnit(member.UnitData)) //유닛 추가 시도
         { 
             //성공시 
             member.SurrenderDataReset(); //기존 맴버쪽의 데이터 초기화 실행 
@@ -287,7 +277,7 @@ public class BattleMapTeamManager : MonoBehaviour
     /// <summary>
     /// 셋팅된 데이터 초기화 
     /// </summary>
-    public void ResetData() 
+    public override void ResetData() 
     {
         foreach (IControllObject member in memberArray)
         {
@@ -296,6 +286,7 @@ public class BattleMapTeamManager : MonoBehaviour
         }
         leaderUnit = null;
         livingMemberList.Clear();
+        base.ResetData();
         //Debug.Log($"{onAssemble} , {onMove} , {onStop}");
     }
 

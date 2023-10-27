@@ -18,7 +18,7 @@ public class TranslateTest : TestBase
     CapsuleCollider target_2_Collider;
 
     [SerializeField]
-    BattleMapTeamManager flockingManager;
+    TeamObject flockingManager;
 
     [SerializeField]
     float cameraZPos = 0.0f;
@@ -38,7 +38,7 @@ public class TranslateTest : TestBase
         };
     UnitData[] testCreateUnitArray;
     [SerializeField]
-    UnitDataBaseNode[] unitTests;
+    UnitBaseNode[] unitTests;
     UnitSearchController testSearch;
     
     protected override void Awake()
@@ -80,7 +80,7 @@ public class TranslateTest : TestBase
     protected override void Test5(InputAction.CallbackContext context)
     {
         //flockingManager.SetFlockingPosArray(flockingPos);
-        foreach (BattleMapTeamMember bt in flockingManager.MemberArray)
+        foreach (TeamMember bt in flockingManager.MemberArray)
         {
             if (bt != null)
             {
@@ -99,7 +99,7 @@ public class TranslateTest : TestBase
     }
     protected override void TestLeftClick(InputAction.CallbackContext context)
     {
-        foreach (BattleMapTeamMember bt in flockingManager.MemberArray) 
+        foreach (TeamMember bt in flockingManager.MemberArray) 
         {
             if (bt != null) 
             {

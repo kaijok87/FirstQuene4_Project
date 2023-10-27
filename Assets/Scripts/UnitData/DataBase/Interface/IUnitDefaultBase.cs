@@ -1,7 +1,5 @@
 using System;
 using UnityEngine;
-using static Cinemachine.DocumentationSortingAttribute;
-using System.Reflection;
 
 /// <summary>
 /// 유닛 기본 능력치 타입
@@ -24,7 +22,6 @@ public enum UnitStateChangeType
 /// </summary>
 public enum BattleUnitType
 {
-    None,
     Guardian,
     Warrior,
     Mage,
@@ -188,7 +185,13 @@ public struct UnitDataBase
             }
         }
     }
-    public Action<int> onRegistanceChange;   
+    public Action<int> onRegistanceChange;
+
+    public UnitDataBase(UnitDataBase defaultData) 
+    {
+        this = defaultData;
+    }
+
 }
 
 
@@ -241,7 +244,16 @@ public struct UnitStateData
             }
         }
     }
-    public Action<float> onFatigueChange; 
+    public Action<float> onFatigueChange;
+
+    public UnitStateData( string unitName ,float fatigue) 
+    {
+        level = 1;
+        this.unitName = unitName;
+        this.fatigue = fatigue;
+        onFatigueChange = null;
+        onLevelChange = null;
+    }
 }
 
 /// <summary>
@@ -689,6 +701,14 @@ public class UnitData
     UnitStateData unitStateData;
     public UnitStateData UnitStateData => unitStateData;
 
+
+    /// <summary>
+    /// 장비하고있는 장비클래스 
+    /// </summary>
+    [SerializeField]
+    UnitEquipBase unitEquipBase;
+    UnitEquipBase UnitEquipBase => unitEquipBase;
+
     public void OnDataChange(int unitIndex, UnitDataBase unitDataBase, UnitStateData unitStateData)
     {
         this.unitIndex = unitIndex;
@@ -696,28 +716,57 @@ public class UnitData
         this.unitStateData = unitStateData;
     }
 
+    public UnitData(int index , string unitName, UnitDataBase unitTypeDefaultData) 
+    {
+        this.unitIndex = index;
+        unitDataBase = unitTypeDefaultData;
+        unitStateData = new UnitStateData(unitName,0.0f);
+    }
 }
 
 /// <summary>
-/// 유닛의 능력치및 상태 관련 인터페이스
+/// 유닛의 기본적인 데이터 정의용 인터페이스
 /// </summary>
-public interface IUnitStateTable
+public interface IUnitDefaultBase
 {
 
     /// <summary>
-    /// 유닛의 정보를 담아둘 객체 
+    /// 유닛의 기본 정보를 담아둘 객체 
     /// </summary>
     UnitData UnitData { get; }
+
+    /// <summary>
+    /// 유닛의 프리팹 모델 
+    /// </summary>
+    public GameObject UnitPrefab { get; }
 
     /// <summary>
     /// 전투맵에서사용될 능력치들
     /// </summary>
     UnitRealTimeState UnitRealTimeState { get; }
 
+    /// <summary>
+    /// 맴버 유닛이 죽을때 연결할 델리게이트
+    /// </summary>
     Action onDie { get; set; }
 
-    void InitDataSetting(UnitStateData unitData);
-    void InitDataSetting();
-  
+    /// <summary>
+    /// 맴버의 유닛 초기 데이터 셋팅용 함수 
+    /// </summary>
+    /// <param name="unitData">맴버에 선택된 유닛</param>
+    /// <param name="unitPrefab">맴버에 선택된 유닛 프리팹모델</param>
+    void InitDataSetting(UnitData unitData,GameObject unitPrefab);
 
+    /// <summary>
+    /// 맴버의 유닛 데이터 수정용 함수
+    /// </summary>
+    /// <param name="unitData">수정할 유닛 데이터</param>
+    void InitDataSetting(UnitData unitData);
+
+    /// <summary>
+    /// 데이터를 초기상태로 돌리는 함수 
+    /// </summary>
+    void ResetData() 
+    {
+    }
 }

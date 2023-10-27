@@ -13,7 +13,13 @@ public class Scriptable_UnitType_DataBase : ScriptableObject
     /// 스크립터블 의 데이터의 구조체 맴버는 Instance과정에서 같은 해시 값을 가진다.
     /// </summary>
     [SerializeField]
-    public UnitDataBase unitBaseData;
+    UnitDataBase unitBaseData;
     public UnitDataBase UnitDataBase  => unitBaseData;
 
+    /// <summary>
+    /// 해당 유닛의 기본 프리팹
+    /// </summary>
+    [SerializeField]
+    GameObject unitPrefab;
+    public GameObject UnitPrefab => unitPrefab;
 }

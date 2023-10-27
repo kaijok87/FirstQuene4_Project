@@ -50,7 +50,7 @@ public class UnitMoveController : MonoBehaviour, IMoveBase
     /// </summary>
     IEnumerator moveCoroutine;
 
-    IUnitStateTable unitData;
+    IUnitDefaultBase unitData;
 
     protected virtual void Awake()
     {

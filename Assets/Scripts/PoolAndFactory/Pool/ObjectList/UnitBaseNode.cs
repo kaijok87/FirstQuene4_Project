@@ -2,16 +2,11 @@ using System;
 using UnityEngine;
 
 /// <summary>
-/// 캐릭터 기본 능력치 정의 클래스
+/// 유닛 데이터 잡아둘 노드데이터
 /// </summary>
-public class UnitDataBaseNode : PoolObjectBase, IUnitStateTable
+public class UnitBaseNode : PoolUnitBase, IUnitDefaultBase
 {
-    /// <summary>
-    /// 스크립터블로셋팅된 기본 데이터 받아올 객체 
-    /// </summary>
-    [SerializeField]
-    Scriptable_UnitType_DataBase scriptableObject;
-
+    [Header("데이터 셋팅 ")]
     /// <summary>
     /// 팀에서의 순번
     /// 유닛 배치와 연관있는 변수
@@ -36,47 +31,39 @@ public class UnitDataBaseNode : PoolObjectBase, IUnitStateTable
     protected UnitRealTimeState unitRealTimeState;
     public UnitRealTimeState UnitRealTimeState => unitRealTimeState;
 
-
-    /// <summary>
-    /// 장비하고있는 장비클래스 
-    /// </summary>
-    UnitEquipBase UnitEquipBase { get; set; }
-
     /// <summary>
     /// 죽을때 동시에 실행할 내용이 필요할시 연결할 델리게이트
     /// </summary>
     public Action onDie { get; set; }
 
+    /// <summary>
+    /// 유닛의 프리팹
+    /// </summary>
+    [SerializeField]
+    GameObject unitPrefab;
+    public GameObject UnitPrefab => unitPrefab;
 
     protected virtual void Awake()
     {
         unitRealTimeState = new UnitRealTimeState();    //틀 잡아두고 
-        unitData = new UnitData();
     }
 
     /// <summary>
-    /// 초기값 셋팅용 
+    /// 유닛 데이터로 초기값 셋팅용 함수 
+    /// 로드시에도 사용 
     /// </summary>
-    /// <param name="index">유닛 관리할 인덱스값</param>
-    /// <param name="unitStateData">초기데이터</param>
-    public virtual void InitDataSetting(int index, UnitStateData unitStateData)
+    /// <param name="unitData">유닛 데이터</param>
+    /// <param name="unitPrefab">유닛 모델</param>
+    public virtual void InitDataSetting(UnitData unitData, GameObject unitPrefab)
     {
-        unitData.OnDataChange(index,scriptableObject.UnitDataBase, unitStateData);
+        this.unitPrefab = unitPrefab;
+        InitDataSetting(unitData);
         SetUnitDataSetting();
     }
-
-    /// <summary>
-    /// 저장파일에서 읽어와서 파싱용도로 사용할 함수
-    /// </summary>
-    /// <param name="index">유닛 관리할 인덱스값</param>
-    /// <param name="unitDataBase">직업별 기본능력치값</param>
-    /// <param name="unitStateData">초기데이터</param>
-    public virtual void LoadDataParsing(int index, UnitDataBase unitDataBase, UnitStateData unitStateData) 
+    public void InitDataSetting(UnitData unitData)
     {
-        unitData.OnDataChange(index, unitDataBase, unitStateData);
-        SetUnitDataSetting();
+        this.unitData = unitData;
     }
-   
 
     /// <summary>
     /// 기본값 가지고 실시간 전투 데이터 셋팅용 함수 
@@ -105,16 +92,6 @@ public class UnitDataBaseNode : PoolObjectBase, IUnitStateTable
     }
 
     /// <summary>
-    /// 장비 클래스에서 데이터를 가져오는 함수
-    /// </summary>
-    /// <param name="equipData">장비 클래스</param>
-    /// <returns>장비 에서 추가될 능력치</returns>
-    protected virtual int UnitEquipData(UnitEquipBase equipData, EquipStateType stateType) 
-    {
-        return int.MinValue; //오버라이딩 해서 사용해야한다. 
-    }
-
-    /// <summary>
     /// 캐릭터 이름 변경 함수
     /// 게임내부에서 캐릭터 이름변경시 사용할 함수
     /// </summary>
@@ -124,8 +101,5 @@ public class UnitDataBaseNode : PoolObjectBase, IUnitStateTable
         //unitData.UnitStateData.UnitName = newName;
     }
 
-    public void InitDataSetting(UnitStateData unitData)
-    {
-        throw new NotImplementedException();
-    }
+ 
 }

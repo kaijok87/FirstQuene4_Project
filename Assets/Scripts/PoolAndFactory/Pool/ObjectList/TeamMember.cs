@@ -5,12 +5,40 @@ using System.Security.Cryptography;
 using Unity.VisualScripting;
 using UnityEngine;
 
+/*
+ 1. 맴버 팀 매니저는 각 팀별(적군, 아군) 이 맴버를 관리하기위한 컴퍼넌트 
+    1 - 1. 맴버 는 팀 매니저에서 추가가되어야 하고 추가될때 초기화 로직이 실행되야한다.
+    1 - 2. 아군 맴버 는 죽었을때 팀매니저 관리용 변수에서 제거가되어야하고 Dead 관련 데이터에 저장되어야한다.
+    1 - 3. 적군 맴버 는 항복했을때 아군 팀매니저 관리용 변수에 추가되어야하고 아군맴버로 변환되어야한다.
+    1 - 4. 맴버는 이동로직을 따로 관리되고  이동명령(개별이동, 군체이동)을 실행시킬수있도록 되야한다. 해당 기능으로 모든 이동을 처리한다.
+    1 - 5. 맴버는 회전로직을 따로 관리되고  회전명령을 실행시킬수 있도록 해야한다 .
+    1 - 6. 팀매니저 오브젝트 하위에 맴버 오브젝트 들이 들어가있어야한다.
+    1 - 7. 맴버 오브젝트에는 모델 오브젝트, 데이터 오브젝트 ,  기타 오브젝트 가 들어가야한다.
+      1 - 7 - 1. 맴버 오브젝트의 모델 오브젝트와 데이터 오브젝트는 맴버 내용이 바뀔때마다 교체 되어야 한다. 
+      1 - 7 - 2. 맴버 오브젝트의 위 두개의 오브젝트는 제외하고 다른 오브젝트들은 공통으로 사용될수있도록 만들어야한다.
+     
+ */
+/*
+ 1- 7 
+ 
+ */
+
 /// <summary>
 /// 군체 맴버 데이터
 /// </summary>
-public class BattleMapTeamMember : PoolObjectBase, IControllObject
+public class TeamMember : PoolObjectBase, IControllObject
 {
+    /// <summary>
+    /// 군체의 인덱스 번호
+    /// </summary>
+    [SerializeField]
+    int flockingIndex = -1;
 
+    /// <summary>
+    /// 군체의 인덱스를 셋팅 
+    /// </summary>
+    public int ArrayIndex => flockingIndex;
+    
     [SerializeField]
     /// <summary>
     /// 현재 맴버가 리더인지 체크할 변수
@@ -35,13 +63,7 @@ public class BattleMapTeamMember : PoolObjectBase, IControllObject
     /// <summary>
     /// 군체를 관리할 메니저
     /// </summary>
-    BattleMapTeamManager parentNode;
-
-    /// <summary>
-    /// 유닛을 풀로 돌리기위한 오브젝트 
-    /// </summary>
-    UnitDataBaseNode unitObject;
-    public UnitDataBaseNode UnitObject => unitObject;
+    TeamObject parentNode;
 
     /// <summary>
     /// 캐릭터의 이동을 관리할 컴포넌트
@@ -49,11 +71,14 @@ public class BattleMapTeamMember : PoolObjectBase, IControllObject
     [SerializeField]
     IMoveBase charcterMoveProcess;
     public IMoveBase CharcterMoveProcess => charcterMoveProcess;
-  
+
+
     /// <summary>
     /// 캐릭터 회전을 관리할 컴포넌트
     /// </summary>
-    CharcterRotateBase charcterRotateProcess;
+    [SerializeField]
+    IRotateBase charcterRotateProcess;
+    IRotateBase CharcterRotateProcess => charcterRotateProcess;
 
 
 
@@ -67,26 +92,19 @@ public class BattleMapTeamMember : PoolObjectBase, IControllObject
         get => flockingDirectionPos;
         set => flockingDirectionPos = value;
     }
-    /// <summary>
-    /// 군체의 인덱스 번호
-    /// </summary>
-    int flockingIndex = -1;
 
-    /// <summary>
-    /// 군체의 인덱스를 셋팅 
-    /// </summary>
-    public int ArrayIndex => flockingIndex;
 
     /// <summary>
     /// 유닛의 데이터 를 관리할 인터페이스
     /// </summary>
-    IUnitStateTable unitData;
-    public IUnitStateTable UnitData => unitData;
+    IUnitDefaultBase unitData;
+    public IUnitDefaultBase UnitData => unitData;
 
     /// <summary>
     /// 유닛이 죽었을때 신호보낼 델리게이트
     /// </summary>
     public Action<IControllObject> onDie { get; set; }
+
 
     /// <summary>
     /// 맴버유닛의 기본 콜라이더 
@@ -100,8 +118,13 @@ public class BattleMapTeamMember : PoolObjectBase, IControllObject
 
     private void Awake()
     {
-        capCollider = GetComponent<CapsuleCollider>();
-        thisColliders = GetComponentsInChildren<Collider>();
+        charcterMoveProcess = GetComponentInChildren<IMoveBase>();
+        charcterMoveProcess.InitDataSetting(colliderRadius);
+
+        charcterRotateProcess = GetComponentInChildren<IRotateBase>();
+        charcterRotateProcess.InitDataSetting();
+        //capCollider = GetComponent<CapsuleCollider>();
+        //thisColliders = GetComponentsInChildren<Collider>();
         //stateList = new(10000);
         //cc = GetComponent<CharacterController>();
         //if (cc != null)
@@ -118,32 +141,26 @@ public class BattleMapTeamMember : PoolObjectBase, IControllObject
     /// 해당 군체 맴버데이터및 델리게이터를 초기화할 함수
     /// </summary>
     /// <param name="parentNode">군체의 중심부</param>
-    /// <param name="unitObject">맴버에담긴 유닛오브젝트</param>
-    /// <param name="flockingPos">군체에서 자신의 상대 위치값</param>
+    /// <param name="unitObject">유닛의 데이터</param>
     /// <param name="index">군체에서의 인덱스값</param>
-    public void InitDataSetting(BattleMapTeamManager parentNode, UnitDataBaseNode unitObject, int index)
+    public void InitDataSetting(TeamObject parentNode, IUnitDefaultBase unit, int index)
     {
         
         flockingIndex = index;
         this.parentNode = parentNode;
-        this.unitObject = unitObject;
 
-        charcterRotateProcess = GetComponentInChildren<CharcterRotateBase>();
-        charcterRotateProcess.InitDataSetting();
-
-        charcterMoveProcess = GetComponentInChildren<IMoveBase>();
-        charcterMoveProcess.InitDataSetting(colliderRadius);
-
-        unitData = GetComponentInChildren<IUnitStateTable>();
-        unitData.InitDataSetting();
+        /// 유닛 데이터 연결 
+        unitData = unit;
         unitData.onDie = OnDie;
 
+        /// 맴버에서 들어오는 액션 연결
         parentNode.onAssemble += OnAssemble;
         parentNode.onMove += CharcterMove;
         parentNode.onRotate += CharcterRotate;
         parentNode.onStop += OnFlockingMovingStop;
 
-        unitObject.transform.position = Vector3.zero;
+        /// 부모 트랜스폼 위치에 맞추기위해 자식 오브잭트 위치 초기화 
+        //unit.transform.position = Vector3.zero;
     }
   
     /// <summary>
@@ -211,9 +228,9 @@ public class BattleMapTeamMember : PoolObjectBase, IControllObject
     /// </summary>
     public override void ResetData()
     {
-        if (unitObject != null)
+        if (unitData != null)
         {
-            unitObject.ResetData();     // 유닛 풀로 돌리고 
+            unitData.ResetData();     // 유닛 풀로 돌리고 
             UnitDataReset();            // 데이터 리셋 
         }
         MemberDataReset();
@@ -236,7 +253,6 @@ public class BattleMapTeamMember : PoolObjectBase, IControllObject
     /// </summary>
     private void UnitDataReset() 
     {
-        unitObject = null;          // 값 초기화 
         unitData.onDie = null;
         unitData = null;
         parentNode.onAssemble -= OnAssemble;

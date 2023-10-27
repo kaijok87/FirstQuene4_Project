@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ActorData : UnitDataBaseNode
+public class ActorData : UnitBaseNode
 {
    
 }
