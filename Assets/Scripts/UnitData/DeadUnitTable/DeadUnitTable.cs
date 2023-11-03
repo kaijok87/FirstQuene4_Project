@@ -11,10 +11,10 @@ public class DeadUnitTableData
 {
 
     /// <summary>
-    /// 캐릭터 이미지 보여주기위한 타입설정
+    /// 캐릭터 이미지 
     /// </summary>
     [SerializeField]
-    BattleUnitType unitType;
+    Sprite unitSprite;
     
     /// <summary>
     /// 캐릭터 이름
@@ -35,22 +35,22 @@ public class DeadUnitTableData
     string deadZone;
 
     /// <summary>
-    /// 죽인 유닛 타입
+    /// 죽인 유닛 이미지
     /// </summary>
     [SerializeField]
-    BattleUnitType killerUnitType;
+    Sprite killerUnitSprite;
 
     /// <summary>
     /// 죽인 유닛
     /// </summary>
     [SerializeField]
-    string killerUnit;
-    public DeadUnitTableData(BattleUnitType type , string name , BattleUnitType killerUnitType, string killerUnit, string time, string zone)
+    string killerUnitName;
+    public DeadUnitTableData(Sprite type , string name , Sprite killerUnitType, string killerUnit, string time, string zone)
     {
-        unitType = type;
+        unitSprite = type;
         unitName = name;
-        this.killerUnitType = killerUnitType;
-        this.killerUnit = killerUnit;
+        killerUnitSprite = killerUnitType;
+        killerUnitName = killerUnit;
         deadTime = time;
         deadZone = zone;
     }
@@ -93,17 +93,25 @@ public class DeadUnitTable
     /// <param name="deadZone">죽인 위치</param>
     public void AddDeadUnitData(UnitData unit, UnitData killerUnit ,string deadZone)
     {
-        BattleUnitType type = unit.UnitDataBase.UnitType;
-        string name = unit.UnitStateData.UnitName;
+        Sprite unitImage = GetUnitImage(unit);
+        string name = unit.GetUnitName();
 
-        BattleUnitType killerUnitType = killerUnit.UnitDataBase.UnitType;
-        string killerName = killerUnit.UnitStateData.UnitName;
+        Sprite killerUnitImage = GetUnitImage(killerUnit);
+        string killerName = killerUnit.GetUnitName();
 
         string deadTime = DateTime.Now.ToString();
 
-        DeadUnitList.Add(new DeadUnitTableData(type, name, killerUnitType, killerName, deadZone, deadTime));
+        DeadUnitList.Add(new DeadUnitTableData(unitImage, name, killerUnitImage, killerName, deadZone, deadTime));
     }
-
+    /// <summary>
+    /// 유닛의 아이콘을 반환하는 함수 
+    /// </summary>
+    /// <param name="unit"></param>
+    /// <returns></returns>
+    private Sprite GetUnitImage(UnitData unit) 
+    {
+        return null;
+    }
     /// <summary>
     /// 타이틀로 이동시 초기화 할 함수 
     /// </summary>

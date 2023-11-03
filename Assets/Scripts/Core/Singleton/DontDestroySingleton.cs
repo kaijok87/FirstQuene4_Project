@@ -43,7 +43,7 @@ public class DontDestroySingleton<T> : MonoBehaviour where T : Component
             instance = this as T;                       // 형변환해서 담고
             DontDestroyOnLoad(instance.gameObject);     //파괴방지걸어둔다
         }
-        else if(instance != this) //뭔가 값이존재할경우 해당 오브젝트를 두번이상 생성한것이니 
+        else //뭔가 값이존재할경우 해당 오브젝트를 두번이상 생성한것이니 
         {
             Destroy(this.gameObject); // 나중에 생성된 this 는 파괴시킨다
         }

@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60b4145af82797149a1281b959576b8b, type: 3}
+  m_Name: Warrior_Unit
+  m_EditorClassIdentifier: 
+  unitStateData:
+    unitName: "\uC804\uC0AC"
+    level: 0
+    fatigue: 0
+  unitBaseData:
+    unitType: 1
+    unitGrade: 0
+    defaultMaxHp: 150
+    strength: 10
+    dexterity: 10
+    agility: 10
+    constitution: 10
+    intelligence: 10
+    wisdom: 10
+    luck: 10
+    registance: 10
+  unitPrefabBase: {fileID: 266816752175485979, guid: 7e37ce9b15aa5a843b4e5c565e8bca4d, type: 3}
+  poolSizeCapasity: 80

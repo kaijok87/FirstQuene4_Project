@@ -9,6 +9,9 @@ using UnityEngine.InputSystem;
 public class TranslateTest : TestBase
 {
     [SerializeField]
+    int mapIndex = 0;
+
+    [SerializeField]
     UnitMoveController testCharter;
     [SerializeField]
     Transform target_1;
@@ -18,7 +21,7 @@ public class TranslateTest : TestBase
     CapsuleCollider target_2_Collider;
 
     [SerializeField]
-    TeamObject flockingManager;
+    TeamBaseNode flockingManager;
 
     [SerializeField]
     float cameraZPos = 0.0f;
@@ -50,20 +53,17 @@ public class TranslateTest : TestBase
         {
             if (unitTests[i] != null)
             {
-                testCreateUnitArray[i] = unitTests[i].UnitData;
+                //testCreateUnitArray[i] = unitTests[i].UnitData;
             }
         }
     }
 
     protected override void Test1(InputAction.CallbackContext context)
     {
+        BattleUnitGenerateManager.Instance.BattleDataSetting(mapIndex);
 
-        if (flockingManager.LeaderUnit == null)
-        {
-            flockingManager.SetFlockingPosArray(flockingPos);
-            flockingManager.InitData(testCreateUnitArray);
-            testSearch = flockingManager.LeaderUnit.transform.GetComponentInChildren<UnitSearchController>();
-        }
+
+
     }
     protected override void Test2(InputAction.CallbackContext context)
     {
@@ -71,7 +71,7 @@ public class TranslateTest : TestBase
     }
     protected override void Test3(InputAction.CallbackContext context)
     {
-        flockingManager.OnAssemble();
+        //flockingManager.OnAssemble();
     }
     protected override void Test4(InputAction.CallbackContext context)
     {
@@ -80,13 +80,13 @@ public class TranslateTest : TestBase
     protected override void Test5(InputAction.CallbackContext context)
     {
         //flockingManager.SetFlockingPosArray(flockingPos);
-        foreach (TeamMember bt in flockingManager.MemberArray)
-        {
-            if (bt != null)
-            {
-                bt.ResetList();
-            }
-        }
+        //foreach (UnitAction_BaseProcess bt in flockingManager.MemberArray)
+        //{
+        //    if (bt != null)
+        //    {
+        //        //bt.ResetList();
+        //    }
+        //}
 
     }
     protected override void TestRightClick(InputAction.CallbackContext context)
@@ -95,17 +95,17 @@ public class TranslateTest : TestBase
         Vector3 screenPos = Mouse.current.position.value;
         screenPos.z = cameraZPos;
         Vector3 worldPos = Camera.main.ScreenToWorldPoint(screenPos);
-        flockingManager.OnFlockingMove(worldPos);
+        //flockingManager.OnFlockingMove(worldPos);
     }
     protected override void TestLeftClick(InputAction.CallbackContext context)
     {
-        foreach (TeamMember bt in flockingManager.MemberArray) 
-        {
-            if (bt != null) 
-            {
-                //bt.SeTList();
-            }
-        }
+        //foreach (UnitAction_BaseProcess bt in flockingManager.MemberArray) 
+        //{
+        //    if (bt != null) 
+        //    {
+        //        //bt.SeTList();
+        //    }
+        //}
 
         //if (testSearch != null) 
         //{

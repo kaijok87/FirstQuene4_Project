@@ -41,7 +41,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 7635795660966084981}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6352ec9afa7252d46bc18d3e06c85e78, type: 3}
+  m_Script: {fileID: 11500000, guid: 2ddf633a699aff34a824cd05506b57b2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  memberCapacity: 20
+  unitMaxCapacity: 20

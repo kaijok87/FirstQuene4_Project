@@ -1,13 +1,7 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
-public class Pool_UnitObject : PoolBase<UnitBaseNode>
+/// <summary>
+/// 유닛종류당 하나씩 생성시킬 풀 기본 틀
+/// </summary>
+public class Pool_UnitObject : Pool_Unit_Base<UnitBaseNode> 
 {
-    public override void SetPrefab(UnitBaseNode prefab)
-    {
-        poolPrefab = prefab;
-        capasity = prefab.Capacity;
-    }
+
 }

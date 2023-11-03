@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60b4145af82797149a1281b959576b8b, type: 3}
+  m_Name: Hero_Guardian_Unit
+  m_EditorClassIdentifier: 
+  unitStateData:
+    unitName: "\uAC00\uB354\uC6A9\uBCD1"
+    level: 0
+    fatigue: 0
+  unitBaseData:
+    unitType: 0
+    unitGrade: 0
+    defaultMaxHp: 200
+    strength: 10
+    dexterity: 5
+    agility: 5
+    constitution: 10
+    intelligence: 5
+    wisdom: 5
+    luck: 5
+    registance: 15
+  unitPrefabBase: {fileID: 9124906056568319302, guid: baeceeb7a2471674ea83f79d37fa8c0c, type: 3}
+  poolSizeCapasity: 80

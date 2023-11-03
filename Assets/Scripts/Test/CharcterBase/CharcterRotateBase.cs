@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-public class CharcterRotateBase : MonoBehaviour, IRotateBase
+public class CharcterRotateBase : MonoBehaviour
 {
     /// <summary>
     /// 회전속도를 정할 변수
